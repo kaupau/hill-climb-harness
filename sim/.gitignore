@@ -1,0 +1,11 @@
+.venv/
+.venv-dream/
+out/
+scratch/
+station.xml
+MUJOCO_LOG.TXT
+calib/*.npz
+calib/*.jpg
+calib/*.log
+dream/arms.lock
+__pycache__/

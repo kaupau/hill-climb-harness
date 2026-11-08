@@ -1,0 +1,52 @@
+# A MakerMods Metal Arm station: two Metal follower arms (Damiao motors),
+# one Meta Quest, three cameras. Copy this file for your station, then replace every REPLACE and null value.
+# docs/hardware_setup.md explains each one.
+
+arm: metal
+# task: "pick up the red cube and put it in the bowl"  # optional: a task text for every episode; --task overrides it
+dataset_dir: ~/hackathon_data/my-task                # one LeRobot v2.1 dataset; each session adds to it
+fps: 30                                              # recording rate
+control_hz: 30                                       # teleop loop rate (a multiple of fps)
+record_width: 640                                    # frames are center-cropped to 16:9 and resized to this
+record_height: 360
+
+arms:
+  left:
+    port: can_follower_l   # the arm's CAN adapter (slcan), or its interface (can0) with socketcan
+    # Quest frame (x right, y up, z toward you) into the arm's base frame. The Metal URDF's base frame has x
+    # forward, y to the arm's left and z up; this is for an operator standing behind the arms and facing the way
+    # they face. Check it with --dry-run (docs/hardware_setup.md, step 5).
+    quest_to_base: [[0, 0, -1], [-1, 0, 0], [0, 1, 0]]
+    workspace_min_m: [-0.60, -0.60, -0.05]  # the box the tool is kept inside, in the arm's base frame
+    workspace_max_m: [0.60, 0.60, 0.60]
+    gripper_open_deg: 111.0      # REQUIRED: copy it from the config dreamcli setup wrote
+    gripper_closed_deg: 0.0    # REQUIRED: as above
+    # The tool center point: the point between the closed fingertips, in the flange's frame (link6), metres.
+    # Dream's own point for the stock MakerMods gripper, the one `dreamcli robot run` drives about. A different
+    # gripper needs its own measured (docs/hardware_setup.md, "Tool center point"). Check it in a dry run either way.
+    tcp_xyz_m: [0.135, 0.0, 0.0]  # Dream's tool point for the stock gripper (scripts/use_dream_tcp.py)
+  right:
+    port: can_follower_r
+    quest_to_base: [[0, 0, -1], [-1, 0, 0], [0, 1, 0]]
+    workspace_min_m: [-0.60, -0.60, -0.05]
+    workspace_max_m: [0.60, 0.60, 0.60]
+    gripper_open_deg: 113.8      # REQUIRED: copy it from the config dreamcli setup wrote
+    gripper_closed_deg: 0.0    # REQUIRED: as above
+    tcp_xyz_m: [0.135, 0.0, 0.0]  # Dream's tool point for the stock gripper (scripts/use_dream_tcp.py)
+
+makermods:
+  can_interface: socketcan        # slcan (/dev/serial/... or /dev/ttyACM*) or socketcan (can0)
+  urdf: ~/.cache/dream_hackathon/urdf/metal_with_gripper.urdf  # scripts/fetch_urdf.py downloads it
+  flange_link: link6
+  urdf_joints: [joint1, joint2, joint3, joint4, joint5, joint6]
+  joint_signs: [1, 1, 1, 1, 1, 1]  # follower angle to URDF joint, makermodslab's mapping; confirm with --dry-run
+
+teleop:
+  max_joint_speed_rad_s: 1.5  # no joint target moves faster
+  translation_scale: 1.0      # 0.5 moves the tool half as far as your hand
+  joint_limit_margin_rad: 0.05
+
+cameras:                      # exactly these three roles; type uvc (any webcam) or realsense
+  overhead: {type: uvc, device: '/dev/v4l/by-path/pci-0000:65:00.3-usb-0:2:1.0-video-index0', width: 1280, height: 720, fps: 30}
+  wrist_l: {type: uvc, device: '/dev/v4l/by-path/pci-0000:67:00.3-usb-0:1.3:1.0-video-index0', width: 1280, height: 720, fps: 30}
+  wrist_r: {type: uvc, device: '/dev/v4l/by-path/pci-0000:67:00.3-usb-0:1.4:1.0-video-index0', width: 1280, height: 720, fps: 30}
